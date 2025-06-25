@@ -4,19 +4,25 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer
 } from 'recharts';
 import './Visualization.css';
-import { useIncomeExpense } from '../context/IncomeExpenseContex';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+import { useIncomeExpense } from '../../context/IncomeExpenseContex';
 
 const Visualization = () => {
-  const [filter, setFilter] = useState({ month: '06', year: '2025' });
+  const [filter, setFilter] = useState({ month: '', year: '' });
   const { incomes, expenses } = useIncomeExpense();
+
+  const allDates = [...incomes, ...expenses].map(item => item.date);
+  const uniqueMonths = [...new Set(allDates.map(date => date.slice(5, 7)))];
+  const uniqueYears = [...new Set(allDates.map(date => date.slice(0, 4)))];
+
+  if (!filter.month && !filter.year && allDates.length > 0) {
+    const latestDate = allDates.sort((a, b) => new Date(b) - new Date(a))[0];
+    setFilter({ month: latestDate.slice(5, 7), year: latestDate.slice(0, 4) });
+  }
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilter({ ...filter, [name]: value });
   };
-
 
   const filteredIncome = incomes.filter(item =>
     item.date.startsWith(`${filter.year}-${filter.month}`)
@@ -27,11 +33,9 @@ const Visualization = () => {
   );
 
   const mergedData = [];
-
   filteredIncome.forEach(item => {
     mergedData.push({ date: item.date, Income: Number(item.amount), Expense: 0 });
   });
-
   filteredExpense.forEach(item => {
     const existing = mergedData.find(entry => entry.date === item.date);
     if (existing) {
@@ -41,9 +45,7 @@ const Visualization = () => {
     }
   });
 
-
   mergedData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
 
   const incomeByCategory = Object.values(
     filteredIncome.reduce((acc, item) => {
@@ -65,19 +67,43 @@ const Visualization = () => {
     }, {})
   );
 
+  const totalIncome = filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0);
+
+  const expenseBreakdown = expenseByCategory.map((item, index) => {
+    const percentage = totalIncome > 0 ? ((item.value / totalIncome) * 100).toFixed(2) : 0;
+    return {
+      id: index + 1,
+      category: item.name,
+      amount: item.value,
+      percentage
+    };
+  });
+
+
+  const sortedIncomeByCategory = [...incomeByCategory].sort((a, b) => b.value - a.value).slice(0, 5);
+  const sortedExpenseByCategory = [...expenseByCategory].sort((a, b) => b.value - a.value).slice(0, 5);
+
+  const generateColor = () => {
+    const randomColor = Math.floor(Math.random() * 16777215).toString(16);
+    return `#${randomColor.padStart(6, '0')}`;
+  };
+
+  const incomeColors = sortedIncomeByCategory.map(() => generateColor());
+  const expenseColors = sortedExpenseByCategory.map(() => generateColor());
+
   return (
     <div className="visualization-container">
       <div className="filter-section">
         <label>Month:
           <select name="month" value={filter.month} onChange={handleFilterChange}>
-            {['01','02','03','04','05','06','07','08','09','10','11','12'].map(m => (
+            {uniqueMonths.map(m => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
         </label>
         <label>Year:
           <select name="year" value={filter.year} onChange={handleFilterChange}>
-            {['2024','2025','2026'].map(y => (
+            {uniqueYears.map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
@@ -102,9 +128,9 @@ const Visualization = () => {
           <h4>Income by Category</h4>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={incomeByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                {incomeByCategory.map((entry, index) => (
-                  <Cell key={`income-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Pie data={sortedIncomeByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                {sortedIncomeByCategory.map((entry, index) => (
+                  <Cell key={`income-cell-${index}`} fill={incomeColors[index]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -117,9 +143,9 @@ const Visualization = () => {
           <h4>Expense by Category</h4>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={expenseByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                {expenseByCategory.map((entry, index) => (
-                  <Cell key={`expense-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Pie data={sortedExpenseByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                {sortedExpenseByCategory.map((entry, index) => (
+                  <Cell key={`expense-cell-${index}`} fill={expenseColors[index]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -128,8 +154,32 @@ const Visualization = () => {
           </ResponsiveContainer>
         </div>
       </div>
+      <div className="expense-table">
+        <h4>Where Your Money Goes</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Category</th>
+              <th>Amount Spent</th>
+              <th>Spending (% of Income)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenseBreakdown.map(row => (
+              <tr key={row.id}>
+                <td data-label="#"> {row.id} </td>
+                <td data-label="Category"> {row.category} </td>
+                <td data-label="Amount Spent"> ₹{row.amount.toLocaleString()} </td>
+                <td data-label="% of Income"> {row.percentage}% </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
 export default Visualization;
+

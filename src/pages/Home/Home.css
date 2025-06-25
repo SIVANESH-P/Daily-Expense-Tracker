@@ -82,6 +82,7 @@
 }
 
 .linechart-container h3 {
+  margin-top: 1rem;
   margin-bottom: 1rem;
   color: #333;
   display: inline;

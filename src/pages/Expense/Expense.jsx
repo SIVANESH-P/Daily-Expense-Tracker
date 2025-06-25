@@ -3,8 +3,9 @@ import './Expense.css';
 import { FaPlusCircle, FaEdit, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useModal } from '../context/ModalContext';
-import { useIncomeExpense } from '../context/IncomeExpenseContex';
+import { useModal } from '../../context/ModalContext';
+import { useIncomeExpense } from '../../context/IncomeExpenseContex';
+import { useCategory } from '../../context/CategoryContext';
 
 const Expense = () => {
   const {expenses, setExpenses} = useIncomeExpense();
@@ -14,6 +15,7 @@ const Expense = () => {
   const [errors, setErrors] = useState({});
   
   const {isAdding,setIsAdding} = useModal();
+  const {expenseCategories} = useCategory();
 
   const validate = (expense) => {
     const errors = {};
@@ -118,9 +120,11 @@ const Expense = () => {
               <td>
                 <select name="category" value={newExpense.category} onChange={handleInputChange}>
                   <option value="">Select</option>
-                  <option value="Food">Food</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Utilities">Utilities</option>
+                  {expenseCategories.map((cat, index) => (
+                    <option key={index} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.category && <span className="error-message">{errors.category}</span>}
               </td>

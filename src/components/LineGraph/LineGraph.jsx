@@ -1,7 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
-import '../pages/Home.css';
-import { useIncomeExpense } from '../context/IncomeExpenseContex';
+import '../../pages/Home/Home.css';
+import { useIncomeExpense } from '../../context/IncomeExpenseContex';
 
 const LineGraph = () => {
   const { incomes, expenses } = useIncomeExpense();
@@ -55,7 +55,7 @@ const LineGraph = () => {
       </ResponsiveContainer>
 
       <div className="know-more-btn">
-        <Link to="/chart">Know More →</Link>
+        <Link to="/Visualization">Know More →</Link>
       </div>
     </div>
   );

@@ -3,8 +3,9 @@ import { FaPlusCircle, FaEdit, FaTrash } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useState} from 'react';
-import { useModal } from '../context/ModalContext';
-import { useIncomeExpense } from '../context/IncomeExpenseContex';
+import { useModal } from '../../context/ModalContext';
+import { useIncomeExpense } from '../../context/IncomeExpenseContex';
+import { useCategory } from '../../context/CategoryContext';
 
 const Income = () => {
   const {incomes, setIncomes} = useIncomeExpense();
@@ -14,6 +15,7 @@ const Income = () => {
   const [editIndex, setEditIndex] = useState(null);
   
   const {showModal, setShowModal} = useModal();
+  const {incomeCategories} = useCategory();
 
   const validate = () => {
     const errors = {};
@@ -83,9 +85,11 @@ const Income = () => {
 
             <select name="category" value={formData.category} onChange={handleChange}>
               <option value="">Select Category</option>
-              <option value="Salary">Salary</option>
-              <option value="Freelance">Freelance</option>
-              <option value="Investment">Investment</option>
+              {incomeCategories.map((cat, index) => (
+                <option key={index} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
             {errors.category && <span className="error">{errors.category}</span>}
 

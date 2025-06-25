@@ -1,13 +1,14 @@
-import { FaWallet, FaShoppingCart, FaBolt, FaWifi   } from 'react-icons/fa'; 
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import LineGraph from '../components/LineGraph';
+import LineGraph from '../../components/LineGraph/LineGraph';
 import './Home.css';
-import QuickAccess from '../components/QuickAccess';
-import SummaryBar from '../components/SummaryBar';
-import { useIncomeExpense } from '../context/IncomeExpenseContex';
+import QuickAccess from '../../components/QuickAccess/QuickAccess';
+import SummaryBar from '../../components/SummaryBar/SummaryBar';
+import { useIncomeExpense } from '../../context/IncomeExpenseContex';
+import { useCategory } from '../../context/CategoryContext';
 
 const Home = () => {
   const {incomes, expenses, totalIncome, totalExpense} = useIncomeExpense();
+  const { incomeCategories, expenseCategories } = useCategory();
   // Data for PieChart
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
@@ -18,13 +19,15 @@ const Home = () => {
     if(incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear){
       return acc + Number(income.amount)
     }
+    return acc;
   },0);
 
   const totalMonthlyExpense = expenses.reduce((acc,expense) => {
     const expenseDate = new Date(expense.date);
     if(expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear){
       return acc + Number(expense.amount)
-    }
+    } 
+    return acc;
   },0);
 
   const data = [
@@ -35,13 +38,44 @@ const Home = () => {
 
   const COLORS = ['#4caf50', '#f44336', '#2196f3']; // green, red, blue
 
-  const recentTransactions = [
-    { id: 1, type: 'Income', category: 'Salary', date: '2024-06-10', amount: 25000, icon: <FaWallet /> },
-    { id: 2, type: 'Expense', category: 'Groceries', date: '2024-06-11', amount: 4000, icon: <FaShoppingCart /> },
-    { id: 3, type: 'Expense', category: 'Electricity', date: '2024-06-09', amount: 1200, icon: <FaBolt /> },
-    { id: 4, type: 'Income', category: 'Freelance', date: '2024-06-08', amount: 8000, icon: <FaWallet /> },
-    { id: 5, type: 'Expense', category: 'Internet', date: '2024-06-07', amount: 1000, icon: <FaWifi /> },
-  ];
+  const incomeTransactionsWithType = incomes.map(function(txn) {
+    return {
+      ...txn,             
+      type: 'Income'     
+    };
+  });
+
+  const expenseTransactionsWithType = expenses.map(function(txn) {
+    return {
+      ...txn,
+      type: 'Expense'
+    };
+  });
+
+  const allTransactions = incomeTransactionsWithType.concat(expenseTransactionsWithType);
+
+
+  const getCategoryIcon = (categoryName, type) => {
+    const categories = type === 'Income' ? incomeCategories : expenseCategories;
+    const category = categories.find(cat => cat.name === categoryName);
+    return category ? category.icon : null;
+  };
+
+  const sortedTransactions = allTransactions.sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+
+    if (dateA > dateB) {
+      return -1; 
+    } else if (dateA < dateB) {
+      return 1; 
+    } else {
+      return 0; 
+    }
+  });
+
+  const recentTransactions = sortedTransactions.slice(0, 5);
+
 
   return (
     <>
@@ -68,7 +102,7 @@ const Home = () => {
           </Pie>
           <Tooltip />
           <Legend 
-            wrapperStyle={{ paddingLeft: 0,top:215 }} 
+            wrapperStyle={{ paddingLeft: 0,top:215, marginTop:24 }} 
           />
         </PieChart>
       </div>
@@ -77,16 +111,16 @@ const Home = () => {
       <div className="column transactions-column">
         <h3>Recent Transactions</h3>
         <ul>
-          {recentTransactions.map(txn => (
-            <li key={txn.id} className={txn.type === 'Income' ? 'income' : 'expense'}>
+          {recentTransactions.map((txn, index) => (
+            <li key={index} className={txn.type === 'Income' ? 'income' : 'expense'}>
               <div className="transaction-details">
-                <span className="icon">{txn.icon}</span>
+                <span className="icon">{getCategoryIcon(txn.category, txn.type)}</span> 
                 <div className="category-info">
                   <span className="category">{txn.category}</span>
                   <span className="date">{txn.date}</span>
                 </div>
               </div>
-              <span className="amount">₹{txn.amount}</span>
+              <span className="amount">{txn.type === 'Expense' ? '- ' : ''}₹{txn.amount}</span>
             </li>
           ))}
         </ul>
